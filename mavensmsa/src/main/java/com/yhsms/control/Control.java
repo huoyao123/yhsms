@@ -2,6 +2,7 @@ package com.yhsms.control;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +49,14 @@ public class Control {
 					u=this.service.LoginUser(id, pass);
 					//System.out.println(u.getCaid());
 					if(u!=null){
-						break;
+						//System.out.println(u.getCanote());
+						if(u.getCanote()!=null){
+							System.out.println("该卡被"+u.getCanote()+"!");
+							System.exit(0);
+						}
+							break;
+						
+						
 					}
 					this.view.println("卡号或密码输入错误!");
 				}
@@ -58,21 +66,30 @@ public class Control {
 					this.view.uShow();
 					int ch = this.ui.getInt("请选择:");
 					if(ch==1){
-						//点菜
-						Map<Integer, String> show = this.service.ShowM();
-						Set<Integer> keySet = show.keySet();
-						System.out.println("菜品编号"+"\t"+"菜名");
-						for (Integer m : keySet) {
-							System.out.println(m+"\t"+show.get(m));
+						while(true){
+							//点菜
+							Map<Integer, String> show = this.service.ShowM();
+							Set<Integer> keySet = show.keySet();
+							System.out.println("菜品编号"+"\t"+"菜名");
+							for (Integer m : keySet) {
+								System.out.println(m+"\t"+show.get(m));
+							}
+							this.view.println("0.退出");
+							int s = this.ui.getInt("请选择：");
+							if(s==0){
+								break;
+							}else{
+								Map<Integer, String> showall = this.service.showAllMenu(s);
+								Set<Integer> keySet2 = showall.keySet();
+								System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"单价");
+								for (Integer mm : keySet2) {
+									System.out.println(mm+"\t"+showall.get(mm));
+								}
+								this.addMenu(u.getCaid());
+							}
+							
 						}
-						int s = this.ui.getInt("请选择：");
-						Map<Integer, String> showall = this.service.showAllMenu(s);
-						Set<Integer> keySet2 = showall.keySet();
-						System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"单价");
-						for (Integer mm : keySet2) {
-							System.out.println(mm+"\t"+showall.get(mm));
-						}
-						this.addMenu(u.getCaid());
+					
 					}else if(ch==2){
 						//查看余额
 						String m = this.selectMoney();
@@ -114,12 +131,19 @@ public class Control {
 							int s = ui.getInt("请选择：");
 							if(s==1){
 								//点菜
+								
 					String e = this.ui.getString("是否有会员卡？y/n");
 					if(e.equals("y")){
 						 int caid = this.ui.getInt("请说卡号：");
-					       this.empaddMenu(em.getEid(), caid);
+						 Card c = this.service.selectCar(caid);
+						 if(c!=null){
+							 System.out.println(this.empaddMenu(em.getEid(), caid)); 
+						 }else{
+							 System.out.println("卡号不存在");
+						 }
+					
 					}else{
-						this.empaddMenu(em.getEid(), 0);
+						System.out.println(this.empaddMenu(em.getEid(), 0));
 					}
 					     	}else if(s==2){
 								//办卡
@@ -127,16 +151,23 @@ public class Control {
 								System.out.println(ca);
 							}else if(s==3){
 								//结账
-						String e = this.ui.getString("是否有会员卡？y/n");
-					    if(e.equals("y")){
-							 this.payM();
+//						String e = this.ui.getString("是否有会员卡？y/n");
+//					    if(e.equals("y")){
+//							 
+//							 System.out.println(this.payM());
+//								}
+//					    else{
+//				      double sum = this.service.jiezhang(0);
+//				      if(sum>=100){
+//							sum=sum-10;
+//							this.view.println("满100减10活动实付："+sum);
+//						}else{
+//							this.view.println("实付:"+sum);
+//						}
+//						
+								this.ShowOrder(em.getEid());
 								}
-					    else{
-				      double sum = this.service.jiezhang(0);
-						String sm = this.service.paycard(0, sum);
-						this.view.println(sm);
-								}
-							}else if(s==4){
+						else if(s==4){
 								//挂失
 								String sms = this.lock();
 								this.view.println(sms);
@@ -146,8 +177,18 @@ public class Control {
 								double m = this.ui.getDouble("输入充值金额：");
 								String a = this.service.addMoney(id, m);
 								this.view.println(a);
+							}else if(s==6){
+								this.ShowOrder(em.getEid());
+							}
+							else if(s==0){
+								System.out.println("退出成功");
+								System.exit(0);
+								
 							}
 						}
+					}else if(ejob.equals("服务员")){
+						this.view.println("抱歉您的权限不足不能登录！");
+						System.exit(0);
 					}
 					else if(ejob.equals("经理")){
 						while(true){
@@ -155,24 +196,50 @@ public class Control {
 							int m = ui.getInt("请选择：");
 							if(m==1){
 								//加员工信息
-								this.addEmp();
-								
+								String s = this.addEmp();
+								System.out.println(s);
 							}else if(m==2){
 								//修改菜单
 								String a = this.updateMenu();
 								System.out.println(a);
 							}else if(m==3){
 								//查看菜单
-								
+								this.selectAllm();
 							}
 							else if(m==4){
 								//冻结卡
+								System.out.println(this.lockcard());
 							}else if(m==5){
 								//查看月销量
+								this.findMonth(m);
 							}else if(m==6){
-								//设置特价菜
+								//管理特价菜
+								this.setSpecial();
 							}else if(m==7){
 								//设置优惠额度
+								this.setYouhui();
+							}else if(m==8){
+								//查询所有员工
+								this.findAllemp();
+							}else if(m==9){
+								//查看员工月销量
+								this.selectMonthbyID();
+							}else if(m==10){
+								//开除员工
+								int eid = this.ui.getInt("输入员工编号：");
+								this.view.println(this.service.deleteEmp(eid));
+							}else if(m==11){
+								//修改员工信息
+								this.UpdateEmp();
+							}else if(m==12){
+								//查看所有客户信息
+								this.selectAlluser();
+							}
+							
+							else if(m==0){
+								System.out.println("退出成功");
+								System.exit(0);
+								
 							}
 						}
 					}
@@ -185,6 +252,19 @@ public class Control {
 		public String empaddMenu(int eid,int cid){
 			//点菜
 			while(true){
+				 Map<Integer, String> show = this.service.ShowM();
+					Set<Integer> keySet = show.keySet();
+					System.out.println("菜品编号"+"\t"+"菜名");
+					for (Integer m : keySet) {
+						System.out.println(m+"\t"+show.get(m));
+					}
+					int ss = this.ui.getInt("请选择：");
+					Map<Integer, String> showall = this.service.showAllMenu(ss);
+					Set<Integer> keySet2 = showall.keySet();
+					System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"单价");
+					for (Integer mm : keySet2) {
+						System.out.println(mm+"\t"+showall.get(mm));
+					}
 				int id = this.ui.getInt("请选择菜的编号：");
 				int num=this.ui.getInt("请输入数量：");
 				this.service.emporder(eid, cid, id, num);
@@ -203,7 +283,7 @@ public class Control {
 				int num=this.ui.getInt("请输入数量：");
 				String s = this.service.addMenu(cid,id,num);
 				this.view.println(s);
-				String u = this.ui.getString("是否继续点菜？y/n");
+				String u = this.ui.getString("是否继续点此类型菜？y/n");
 				if(u.equals("n")){
 					break;
 				}
@@ -224,7 +304,7 @@ public class Control {
 			if(i==1){
 				Map<Integer, String> order = this.service.selectnoworder(id);
 				Set<Integer> o = order.keySet();
-				System.out.println("订单编号"+"\t"+"菜品编号"+"\t"+"数量"+"\t"+"金额");
+				System.out.println("订单编号"+"\t"+"菜品编号"+"\t"+"菜品名称"+"\t"+"数量"+"\t"+"单价"+"\t"+"金额");
 				for (Integer it : o) {
 					System.out.println(it+"\t"+order.get(it));
 				}
@@ -274,7 +354,7 @@ public class Control {
 			int m = this.ui.getInt("请选择：");
 			if(m==1){
 				while(true){
-					int d = this.ui.getInt("输入要修改的编号：");
+					int d = this.ui.getInt("输入要修改菜品的编号：");
 					int num = this.ui.getInt("请输入要修改的数量：");
 					String s = this.service.updateorder(cid, d, num);
 					this.view.println(s);
@@ -319,75 +399,277 @@ public class Control {
 		//添加员工的方法
 		public String addEmp(){
 			Employee e=new Employee();
-			e.setEid(this.ui.getInt("输入员工编号："));
-			e.setEname(this.ui.getString("输入员工姓名："));
-			e.setEaccount(this.ui.getString("输入员工账号："));
-			e.setEpass(this.ui.getString("输入员工密码："));
-			e.setEjob(this.ui.getString("输入员工职位："));
-			e.setEloc(this.ui.getString("输入员工工作地址："));
-			e.setEnote(this.ui.getString(""));
-			return this.service.addEmp(e);
+			int eid=this.ui.getInt("输入员工编号：");
+			String ename=this.ui.getString("输入员工姓名：");
+			String eaccount=this.ui.getString("输入员工账号：");
+			String epass=this.ui.getString("输入员工密码：");
+		String ejob=this.ui.getString("输入员工职位：");
+			String eloc=this.ui.getString("输入员工工作地址：");
+			//e.setEnote(this.ui.getString(""));
+			String addEmp = this.service.addEmp(new Employee(eid, ename, eaccount, epass, ejob, eloc, ""));
+			return addEmp;
 		}
 		//修改菜单的方法
 		public String updateMenu(){
-			this.view.UpdateMenu();
-			int i = this.ui.getInt("请选择：");
-			//添加菜品
-			if(i==1){
-				int mid = this.ui.getInt("请添加的菜品的编号：");
-				String mname = this.ui.getString("添加菜品的名字：");
-				double mprice = this.ui.getDouble("菜品的价格：");
-				//String mnote = this.ui.getString("");
-				int mtid = this.ui.getInt("菜品类型编号：");
-				String s = this.service.addMenus(new Menum(mid, mname, mprice, ""), mtid);
-			    return s;
-			}//删除菜类型
-			else if(i==5){
-				int mid = this.ui.getInt("请输入菜类型的编号：");
-				String s = this.service.deletemetype(mid);
-				return s;
-			}//删除菜品
-			else if(i==2){
-				int mid = this.ui.getInt("请输入菜的编号：");
-				String s = this.service.deleteM(mid);
-				return s;
-			}//修改菜品的类型
-			else if(i==3){
-				int mid = this.ui.getInt("请输入菜类型编号：");
-				String name = this.ui.getString("菜的类型名字：");
-				String s = this.service.updatemetype(mid, name);
-				return s;
-			}//修改菜的价格
-			else if(i==4){
-				int mid = this.ui.getInt("请输入菜的编号：");
-				double price = this.ui.getDouble("请输入菜的价格：");
-				String s = this.service.updatemenu(mid, price);
-				return s;
-			}//删除菜的类型
-			else if(i==5){
-				int mid = this.ui.getInt("请输入菜的类型编号：");
-				String s = this.service.deletemetype(mid);
-				return s;
-			}//添加菜的类型
-			else if(i==6){
-				int mid = this.ui.getInt("请输入菜的类型编号：");
-				String mtname = this.ui.getString("请输入菜的类型名字：");
-				String s = this.service.addmenuType(mid, mtname);
-				return s;
+			while(true){
+				this.view.UpdateMenu();
+				int i = this.ui.getInt("请选择：");
+				//添加菜品
+				if(i==1){
+					while(true){
+						int mid = this.ui.getInt("请添加的菜品的编号：");
+						String mname = this.ui.getString("添加菜品的名字：");
+						double mprice = this.ui.getDouble("菜品的价格：");
+						//String mnote = this.ui.getString("");
+						int mtid = this.ui.getInt("菜品类型编号：");
+						String s = this.service.addMenus(new Menum(mid, mname, mprice, ""), mtid);
+					    String u1 = this.ui.getString("是否继续添加？y/n");
+						if(u1.equals("n")){
+							break;
+						}
+						}
+					}
+					
+				//删除菜类型
+				else if(i==5){
+					while(true){
+						int mid = this.ui.getInt("请输入菜类型的编号：");
+						String s = this.service.deletemetype(mid);
+						String u = this.ui.getString("是否继续？y/n");
+						if(u.equals("n")){
+							break;
+						}
+					}
+				
+				}//删除菜品
+				else if(i==2){
+					while(true){
+						int mid = this.ui.getInt("请输入菜的编号：");
+						String s = this.service.deleteM(mid);
+						String u = this.ui.getString("是否继续？y/n");
+						if(u.equals("n")){
+							break;
+					}
+					}	
+				}//修改菜品的类型
+				else if(i==3){
+					while(true){
+						int mid = this.ui.getInt("请输入菜类型编号：");
+						String name = this.ui.getString("菜的类型名字：");
+						String s = this.service.updatemetype(mid, name);
+						String u = this.ui.getString("是否继续？y/n");
+						if(u.equals("n")){
+							break;
+					}
+					}
+				}//修改菜的价格
+				else if(i==4){
+					while(true){
+						int mid = this.ui.getInt("请输入菜的编号：");
+						double price = this.ui.getDouble("请输入菜的价格：");
+						String s = this.service.updatemenu(mid, price);
+						String u = this.ui.getString("是否继续？y/n");
+						if(u.equals("n")){
+							break;
+					}
+					}
+				}//删除菜的类型
+				else if(i==5){
+					while(true){
+						int mid = this.ui.getInt("请输入菜的类型编号：");
+						String s = this.service.deletemetype(mid);
+						String u = this.ui.getString("是否继续？y/n");
+						if(u.equals("n")){
+							break;
+					}
+					}
+					
+				}//添加菜的类型
+				else if(i==6){
+					while(true){
+						int mid = this.ui.getInt("请输入菜的类型编号：");
+						String mtname = this.ui.getString("请输入菜的类型名字：");
+						String s = this.service.addmenuType(mid, mtname);
+						String u = this.ui.getString("是否继续添加？y/n");
+						if(u.equals("n")){
+							break;
+					}
+					}
+					
+					}
+				
+				else if(i==0){
+					break;
+				}
+			
 			}
 			return "修改成功";
+			
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		//查看菜单的方法
+		public void selectAllm(){
+			Map<Integer, String> findall = this.service.selectAllmenu();
+			Set<Integer> key = findall.keySet();
+			System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"单价"+"\t"+"所属类型"+"\t"+"备注");
+			for (Integer it : key) {
+				System.out.println(it+"\t"+findall.get(it));
+			}
+		}
+		//设置一个冻结卡的方法
+				public String lockcard(){
+					int id = this.ui.getInt("输入卡号:");
+					return this.service.Lock(id, "冻结");
+				}
+		//查看月销量的方法
+		public void findMonth(int m){
+			int month = this.ui.getInt("请输入月份：");
+			Map<Integer, String> sm = this.service.selectmonth(month);
+			Set<Integer> key = sm.keySet();
+			System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"销量");
+			for (Integer it : key) {
+				System.out.println(it+"\t"+sm.get(it));
+			}
+		}
+		//管理特价菜
+		public void setSpecial(){
+			this.view.println("1.添加特价菜");
+			this.view.println("2.取消特价菜");
+			this.view.println("3.显示特价菜");
+			int i = this.ui.getInt("请选择：");
+			if(i==1){
+				int mid = this.ui.getInt("请输入菜品编号：");
+				String s = this.service.setspecial(mid);
+				this.view.println(s);
+			}else if(i==2){
+				int mid = this.ui.getInt("请输入菜品编号：");
+				String s = this.service.deleteSpecial(mid);
+				this.view.println(s);
+			}else if(i==3){
+				List<String> list = this.service.selectspecial();
+				System.out.println("菜品编号"+"\t"+"菜名"+"\t"+"单价");
+				for (String s : list) {
+					System.out.println(s);
+				}
+			}
+			
+		}
+		//设置优惠额度
+		public void setYouhui(){
+			System.out.println("1.设置vip优惠额度");
+			System.out.println("2.设置svip优惠额度");
+			int ch = this.ui.getInt("请选择：");
+			if(ch==1){
+				double vip = this.service.setVip(this.ui.getDouble("输入优惠度："));
+			    if(vip>0){
+			    	System.out.println("设置成功！vip优惠额度为"+vip);
+			    }else{
+			    	System.out.println("设置失败！");
+			    }
+			}else if(ch==2){
+				double svip = this.service.setSVip(this.ui.getDouble("输入优惠度："));
+				if(svip>0){
+			    	System.out.println("设置成功！svip优惠额度为"+svip);
+			    }else{
+			    	System.out.println("设置失败！");
+			    }
+			}
+		}
+		//查询所有员工
+		public void findAllemp(){
+			Map<Integer, String> emp = this.service.finfAll();
+			Set<Integer> key = emp.keySet();
+			System.out.println("员工编号"+"\t"+"员工姓名"+"\t"+"工作职位"+"\t"+"工作地点");
+			for (Integer it: key) {
+				System.out.println(it+"\t"+emp.get(it));
+			}
+		}
+		//打印小票
+		public void ShowOrder(int eid){
+			int p = this.ui.getInt("请选择支付方式：1.会员卡 / 2.现金");
+			if(p==1){
+				int caid = this.ui.getInt("请输入卡号：");
+				this.showDing(eid);
+				this.showMenu(caid);
+				this.showHou(caid);
+				 this.view.println("\t欢迎您的下次光临");
+			}else if(p==2){
+				this.showDing(eid);
+				this.showMenu(0);
+				double sum = this.service.jiezhang(0);
+				this.view.println("总计："+sum);
+				if(sum>=100){
+					sum=sum-10;
+					this.view.println("满100减10活动实付："+sum);
+				}else{
+					this.view.println("实付:"+sum);
+				}
+			  this.view.println("\t欢迎您的下次光临");
+			}
+		}
+		public void showMenu(int caid){
+			//this.service.Print(caid);
+			Map<Integer, String> map = this.service.selectnoworder(caid);
+			Set<Integer> keySet = map.keySet();
+			System.out.println("编号"+"\t"+"菜品编号"+"\t"+"菜名"+"\t"+"数量"+"\t"+"单价"+"\t"+"金额");
+			for (Integer i : keySet) {
+				System.out.println(i+"\t"+map.get(i));
+			}
+			
+		}
+		public void showDing(int id){
+			this.view.println("\t欢迎光临雅惠餐厅");
+			this.view.println("\t员工"+id+"为您服务");
+		}
+		public void showHou(int caid){
+			double sum = this.service.jiezhang(caid);
+			this.view.println("总计："+sum);
+			String s = this.service.paycard(caid, sum);
+			this.view.println(s);
+			
+		}
+		//查看员工销量
+		public void selectMonthbyID(){
+			int eid = this.ui.getInt("输入员工号：");
+			//根据员工号查询员工
+			Employee e = this.service.selectById(eid);
+			if(e==null){
+				this.view.println("输入的员工号不存在");
+			}else{
+				Map<Integer, String> month = this.service.selectorderbyeid(eid);
+				Set<Integer> keySet = month.keySet();
+				int num=0;
+				System.out.println("编号"+"\t"+"菜品编号"+"\t"+"数量"+"\t"+"金额"+"\t"+"备注"+"\t"+"下单时间");
+				for (Integer it : keySet) {
+					System.out.println(it+"\t"+month.get(it));
+					num++;
+				}
+				System.out.println("总销量单数："+num);
+			}
+			
+		}
+		//修改员工信息的方法
+		public void UpdateEmp(){
+			System.out.println("1.修改员工职位");
+			System.out.println("2.修改员工工作地址");
+			int ch = this.ui.getInt("请选择：");
+			if(ch==1){
+				int eid = this.ui.getInt("输入员工编号：");
+				String ejob = this.ui.getString("输入员工职位：");
+				System.out.println(this.service.updateemp(eid, ejob));
+			}else if(ch==2){
+				int eid = this.ui.getInt("输入员工编号：");
+				String eloc = this.ui.getString("输入员工工作地址：");
+				System.out.println(this.service.updataLoc(eid, eloc));
+			}
+		}
+		//查看所有客户信息
+		public void selectAlluser(){
+			List<Card> list = this.service.selectAlluser();
+			System.out.println("会员卡号"+"\t"+"会员姓名"+"\t"+"会员类型"+"\t"+"优惠额度"+"\t"+"余额"+"\t"+"备注");
+			for (Card c : list) {
+				System.out.println(c);
+			}
+		}
 		
 		
 		

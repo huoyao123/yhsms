@@ -125,7 +125,7 @@ public class Card implements Serializable{
 
 	@Override
 	public String toString() {
-		System.out.println("会员卡号"+"\t"+"会员姓名"+"\t"+"会员类型"+"\t"+"优惠额度"+"\t"+"余额"+"\t"+"备注");
+		//System.out.println("会员卡号"+"\t"+"会员姓名"+"\t"+"会员类型"+"\t"+"优惠额度"+"\t"+"余额"+"\t"+"备注");
 		return this.caid+"\t"+this.uname+"\t"
 		       +this.catype+"\t"+this.discount+"\t"+this.money+"\t"+this.canote;
 	}
